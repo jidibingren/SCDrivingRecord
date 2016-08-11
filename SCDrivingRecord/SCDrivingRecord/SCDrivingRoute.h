@@ -28,6 +28,8 @@
 
 @property (nonatomic, assign)double distance;
 
+@property (nonatomic, assign)int  motionType;
+
 @property (nonatomic, strong)RLMArray<SCDrivingRouteSection*><SCDrivingRouteSection> *sections;
 
 @property (nonatomic, strong)SCDrivingRouteSection *speedUps;

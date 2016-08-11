@@ -86,7 +86,7 @@
     
     [self setUpRootViewController];
     
-    [[SCDrivingRecord sharedInstance] dataProcessing];
+    [[SCDrivingRecord sharedInstance] dataProcessing:SCMotionTypeAutomotive];
     
 }
 

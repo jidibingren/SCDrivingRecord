@@ -14,15 +14,7 @@
 
 @property (nonatomic, assign)int    confidence;
 
-@property (nonatomic, assign)BOOL   stationary;
-
-@property (nonatomic, assign)BOOL   walking;
-
-@property (nonatomic, assign)BOOL   running;
-
-@property (nonatomic, assign)BOOL   automotive;
-
-@property (nonatomic, assign)BOOL   cycling;
+@property (nonatomic, assign)int    motionType;
 
 @property (nonatomic, strong)NSDate *startDate;
 

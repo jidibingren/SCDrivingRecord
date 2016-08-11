@@ -18,7 +18,8 @@ typedef NS_ENUM(NSInteger, SCMotionType) {
     SCMotionTypeNotMoving = 1,
     SCMotionTypeWalking,
     SCMotionTypeRunning,
-    SCMotionTypeAutomotive
+    SCMotionTypeAutomotive,
+    SCMotionTypeCycling,
 };
 
 @interface SCDrivingRecord : NSObject
@@ -37,10 +38,12 @@ typedef NS_ENUM(NSInteger, SCMotionType) {
 @property (nonatomic, assign)NSInteger    maxSpeed;
 @property (nonatomic, assign)NSInteger    speedChangeThreshold;
 @property (nonatomic, assign)NSInteger    suddenPeedThreshold;
+@property (nonatomic, assign)NSInteger    maxDiscontinuityTime;
+@property (nonatomic, assign)CGFloat      minValidDistance;
 
 - (void)startMonitoringLocation:(BOOL)isLocationKey;
 - (void)restartMonitoringLocation;
-- (void)dataProcessing;
+- (void)dataProcessing:(SCMotionType)motionType;
 - (NSMutableArray *)getRoutes;
 
 @end

@@ -50,6 +50,8 @@
         self.speedChangeThreshold = 2;
         self.maxSpeed = 28;
         self.suddenPeedThreshold = 10;
+        self.maxDiscontinuityTime = 60*3;
+        self.minValidDistance = 0;
         
         [self readInfo];
     }
@@ -165,11 +167,22 @@ monitoringDidFailForRegion:(nullable CLRegion *)region
                 
                 SCDRActivity * activity = [[SCDRActivity alloc]init];
                 activity.confidence = motion.confidence;
-                activity.stationary = motion.stationary;
-                activity.walking = motion.walking;
-                activity.running = motion.running;
-                activity.automotive = motion.automotive;
-                activity.cycling = motion.cycling;
+                if (motion.automotive) {
+                    activity.motionType = SCMotionTypeAutomotive;
+                }else if (motion.running) {
+                    activity.motionType = SCMotionTypeRunning;
+                }else if (motion.walking) {
+                    activity.motionType = SCMotionTypeWalking;
+                }else {
+                    activity.motionType = SCMotionTypeAutomotive;
+                    
+                    if ([motion respondsToSelector:@selector(cycling)]) {
+                        if (motion.cycling) {
+                            activity.motionType = SCMotionTypeCycling;
+                        }
+                    }
+                }
+                
                 activity.startDate = motion.startDate;
                 
                 [activitiesArray addObject:activity];
@@ -192,7 +205,10 @@ monitoringDidFailForRegion:(nullable CLRegion *)region
         if ((location.speed >= 5 && _lastLocation.speed < 5) || (location.speed < 5 && _lastLocation.speed >= 5)) {
             
             SCDRActivity * activity = [[SCDRActivity alloc]init];
-            activity.automotive = _locationManager.location.speed > 5;
+            if (_locationManager.location.speed > 5) {
+                activity.motionType = SCMotionTypeAutomotive;
+            }
+            
             activity.startDate = _locationManager.location.timestamp;
             
             RLMRealm *wrealm = [RLMRealm realmWithURL:self.activityFilePath];
@@ -279,7 +295,7 @@ monitoringDidFailForRegion:(nullable CLRegion *)region
     return routes.count > 0 ? routes : [NSMutableArray new];
 }
 
-- (void)dataProcessing{
+- (void)dataProcessing:(SCMotionType)motionType{
     
     dispatch_async(dispatch_get_global_queue(DISPATCH_QUEUE_PRIORITY_HIGH, 0), ^{
         RLMRealm *activityRealm = [RLMRealm realmWithURL:self.activityFilePath];
@@ -290,14 +306,18 @@ monitoringDidFailForRegion:(nullable CLRegion *)region
         
         NSMutableArray <SCDrivingRoute *> *routesArray = [NSMutableArray new];
         
-        NSMutableArray *tempActivities = [self filterActivities:activities];
+        NSMutableArray *tempActivities = [self filterActivities:activities type:motionType];
         
         for (NSUInteger i = 0, count = tempActivities.count; i < count; i++) {
             
             SCDRActivity *activitie = tempActivities[i];
             SCDRActivity *nextActivitie = nil;
             
-            if (!activitie.automotive || (i + 1 >= count)) {
+//            if (!activitie.automotive || (i + 1 >= count)) {
+//                continue;
+//            }
+            
+            if (activitie.motionType != motionType || (i + 1 >= count)) {
                 continue;
             }
             
@@ -317,6 +337,7 @@ monitoringDidFailForRegion:(nullable CLRegion *)region
             }
             
             SCDrivingRoute *route = [SCDrivingRoute new];
+            route.motionType = motionType;
             route.overspeeds = [self createSectionWithLocation:nil];
             route.suddenTurns = [self createSectionWithLocation:nil];
             route.speedUps = [self createSectionWithLocation:nil];
@@ -375,7 +396,7 @@ monitoringDidFailForRegion:(nullable CLRegion *)region
             
             [self addSection:lastSection ToRoute:route];
             
-            if (route.distance > 0) {
+            if (route.distance > _minValidDistance) {
                 [routesArray addObject:route];
             }
             
@@ -405,7 +426,7 @@ monitoringDidFailForRegion:(nullable CLRegion *)region
     
 }
 
-- (NSMutableArray<SCDRActivity*> *)filterActivities:(RLMResults<SCDRActivity*>*)activities{
+- (NSMutableArray<SCDRActivity*> *)filterActivities:(RLMResults<SCDRActivity*>*)activities type:(SCMotionType)motionType{
     NSMutableArray<SCDRActivity *> *tempActivities = [NSMutableArray new];
     
     for (NSUInteger i = 0, count = activities.count; i < count; ) {
@@ -415,7 +436,7 @@ monitoringDidFailForRegion:(nullable CLRegion *)region
         SCDRActivity *noAutomotiveActivitie = activities[j];
         for (; j < count; j++) {
             
-            if ([activities[j] automotive]) {
+            if ([activities[j] motionType] == motionType) {
                 
                 lastActivitie = activities[j];
                 
@@ -443,7 +464,7 @@ monitoringDidFailForRegion:(nullable CLRegion *)region
             while (k < count) {
                 for (; k < count; k++) {
                     
-                    if ([activities[k] automotive] != YES) {
+                    if ([activities[k] motionType] != motionType) {
                         
                         activitie = activities[k];
                         
@@ -463,7 +484,7 @@ monitoringDidFailForRegion:(nullable CLRegion *)region
                     
                     for (; h < count; h++) {
                         
-                        if ([activities[h] automotive]) {
+                        if ([activities[h] motionType] == motionType) {
                             
                             nextActivitie = activities[h];
                             
@@ -477,7 +498,7 @@ monitoringDidFailForRegion:(nullable CLRegion *)region
                     
                     if (nextActivitie) {
                         
-                        if ( [nextActivitie.startDate timeIntervalSinceDate:activitie.startDate] > 60*3) {
+                        if ( [nextActivitie.startDate timeIntervalSinceDate:activitie.startDate] > _maxDiscontinuityTime) {
                             
                             [tempActivities addObject:activitie];
                             
@@ -485,12 +506,10 @@ monitoringDidFailForRegion:(nullable CLRegion *)region
                             break;
                             
                         }else{
-//                            i = h + 1;
+
                             k = h + 1;
                             continue;
                         }
-                        
-//                        continue;
                         
                     }else{
                         [tempActivities addObject:activitie];
@@ -526,8 +545,6 @@ monitoringDidFailForRegion:(nullable CLRegion *)region
             lastSection.distance += section.distance;
             
             [(NSMutableData*)lastSection.points appendBytes:section.points.bytes length:section.points.length];
-            
-//            [route.sections replaceObjectAtIndex:route.sections.count-1 withObject:lastSection];
             
         }else{
             
