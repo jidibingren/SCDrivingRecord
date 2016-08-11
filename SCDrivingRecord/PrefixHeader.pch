@@ -1,0 +1,75 @@
+//
+//  PrefixHeader.pch
+//  SCDrivingRecord
+//
+//  Created by SC on 16/8/8.
+//  Copyright © 2016年 SDJY. All rights reserved.
+//
+
+#ifndef PrefixHeader_pch
+#define PrefixHeader_pch
+
+// Include any system framework and library headers here that should be included in all compilation units.
+// You will also need to set the Prefix Header build setting of one or more of your targets to reference this file.
+#ifdef __OBJC__
+
+// macro definition
+// 申明一个静态方法sharedInstance，同时屏蔽init方法，使这个类成为单例
+#define DECLARE_SINGLETON() +(instancetype)sharedInstance; \
+-(instancetype) init __attribute__((unavailable("init not available")));
+
+// 实现单例所需要的方法: sharedInstance
+#define IMPLEMENT_SINGLETON()                         \
++(instancetype)sharedInstance {                                    \
+static id instance = nil;                   \
+static dispatch_once_t onceToken;                   \
+dispatch_once(&onceToken, ^{                        \
+instance = [[self alloc] init];            \
+});                                                 \
+return instance;                                    \
+}
+
+#define BAIDU_MAP_KEY @"VYKOXaUQ0tdeHZxQUSRYsdE03XKyj2G4"
+#define ALI_MAP_KEY @"b80e75a62b708b8efde712a6ee040b79"
+
+//#define BAIDU_MAP
+#define AMap3D
+// third lib or frameworks
+#import <CoreLocation/CoreLocation.h>
+#ifdef BAIDU_MAP
+#import <BaiduMapAPI_Base/BMKBaseComponent.h>
+#import <BaiduMapAPI_Cloud/BMKCloudSearchComponent.h>
+#import <BaiduMapAPI_Location/BMKLocationComponent.h>
+#import <BaiduMapAPI_Map/BMKMapComponent.h>
+#import <BaiduMapAPI_Radar/BMKRadarComponent.h>
+#import <BaiduMapAPI_Search/BMKSearchComponent.h>
+#import <BaiduMapAPI_Utils/BMKUtilsComponent.h>
+#else
+#import <MAMapKit/MAMapKit.h>
+#endif
+#ifndef AMap3D
+#import <AMapFoundationKit/AMapFoundationKit.h>
+#endif
+
+#import <Masonry.h>
+#import <BlocksKit.h>
+#import <BlocksKit+UIKit.h>
+#import <Realm/Realm.h>
+
+
+
+#import "SCDRLocation.h"
+#import "SCDRActivity.h"
+#import "SCDrivingRouteSection.h"
+#import "SCDrivingRoute.h"
+#import "SCDrivingRecord.h"
+
+#import "SCRoutingListController.h"
+#import "SCRoutingDetailController.h"
+#import "SCMapViewController.h"
+
+
+
+
+#endif
+#endif /* PrefixHeader_pch */
