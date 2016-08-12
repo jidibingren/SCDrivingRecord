@@ -34,11 +34,12 @@ typedef NS_ENUM(NSInteger, SCMotionType) {
 @property (nonatomic, strong)NSURL *activityFilePath;
 @property (nonatomic, strong)NSURL *routesFilePath;
 
-@property (nonatomic, assign)NSInteger    turnThreshold;
-@property (nonatomic, assign)NSInteger    maxSpeed;
-@property (nonatomic, assign)NSInteger    speedChangeThreshold;
-@property (nonatomic, assign)NSInteger    suddenPeedThreshold;
-@property (nonatomic, assign)NSInteger    maxDiscontinuityTime;
+@property (nonatomic, assign)CGFloat    turnThreshold;
+@property (nonatomic, assign)CGFloat    maxSpeed;
+@property (nonatomic, assign)CGFloat    speedChangeThreshold;
+@property (nonatomic, assign)CGFloat    suddenPeedThreshold;
+@property (nonatomic, assign)CGFloat    suddenPeedSubThreshold;
+@property (nonatomic, assign)CGFloat    maxDiscontinuityTime;
 @property (nonatomic, assign)CGFloat      minValidDistance;
 
 - (void)startMonitoringLocation:(BOOL)isLocationKey;

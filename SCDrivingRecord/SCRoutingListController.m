@@ -36,8 +36,10 @@
     dispatch_async(dispatch_get_global_queue(DISPATCH_QUEUE_PRIORITY_HIGH, 0), ^{
         
         wself.dataArray = [[SCDrivingRecord sharedInstance] getRoutes];
-        [wself.tableView reloadData];
-        
+        dispatch_async(dispatch_get_main_queue(), ^{
+            [wself.tableView reloadData];
+        });
+    
     });
     
     [[NSNotificationCenter defaultCenter] addObserver:self selector:@selector(notiHandler:) name:SCRoutesDataUpdateNotification object:nil];
@@ -49,7 +51,10 @@
         dispatch_async(dispatch_get_global_queue(DISPATCH_QUEUE_PRIORITY_HIGH, 0), ^{
         
             wself.dataArray = [[SCDrivingRecord sharedInstance] getRoutes];
-            [wself.tableView reloadData];
+            dispatch_async(dispatch_get_main_queue(), ^{
+                [wself.tableView reloadData];
+            });
+
             
         });
     }
